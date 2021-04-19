@@ -9,7 +9,7 @@ const inputTransactionAmount = document.querySelector('#amount');
 const localStorageTransactions = JSON.parse(localStorage
   .getItem('transactions'));
 let transactions = localStorage
-  .getItem('transactions') !== null ? localStorageTransactions : []; 
+  .getItem('transactions') !== null ? localStorageTransactions : [];
 
 const removeTransaction = ID => {
   transactions = transactions
@@ -18,43 +18,46 @@ const removeTransaction = ID => {
   init();
 }
 
-const addTransactionIntoDOM = transaction => {
-  const operator = transaction.amount < 0 ? '-' : '+';
-  const amountWithoutOperator = Math.abs(transaction.amount);
+const addTransactionIntoDOM = ({ id, name, amount }) => {
+  const operator = amount < 0 ? '-' : '+';
+  const amountWithoutOperator = Math.abs(amount);
   const amountWithToFixedAndCurrency = parseFloat(amountWithoutOperator.toFixed(2))
-  .toLocaleString('pt-BR', {
-    currency: 'BRL',
-    minimumFractionDigits: 2
-  });
-  const CSSClass = transaction.amount < 0 ? 'minus' : 'plus';
+    .toLocaleString('pt-BR', {
+      currency: 'BRL',
+      minimumFractionDigits: 2
+    });
+  const CSSClass = amount < 0 ? 'minus' : 'plus';
   const li = document.createElement('li');
 
   li.classList.add(CSSClass);
   li.innerHTML = `
-    ${transaction.name} 
+    ${name} 
     <span>${operator} R$${amountWithToFixedAndCurrency}</span>
-    <button class="delete-btn" onClick="removeTransaction('${transaction.id}')">
-      x
-    </button>
+    <button class="delete-btn" onClick="removeTransaction('${id}')">x</button>
   `;
 
   transactionsUl.prepend(li);
 }
 
+const getExpenses = transactionsAmount => Math.abs(transactionsAmount
+  .filter(value => value < 0)
+  .reduce((accumulator, value) => accumulator + value, 0))
+  .toFixed(2);
+
+const getIncome = transactionsAmount => transactionsAmount
+  .filter(value => value > 0)
+  .reduce((accumulator, value) => accumulator + value, 0)
+  .toFixed(2);
+
+const getTotal = transactionsAmount => transactionsAmount
+  .reduce((accumulator, transaction) => accumulator + transaction, 0)
+  .toFixed(2);
+
 const updateBalanceValues = () => {
-  const transactionsAmount = transactions
-    .map(transaction => transaction.amount);
-  const total = transactionsAmount
-    .reduce((accumulator, transaction) => accumulator + transaction, 0)
-    .toFixed(2);
-  const income = transactionsAmount
-    .filter(value => value > 0)
-    .reduce((accumulator, value) => accumulator + value, 0)
-    .toFixed(2);
-  const expense = Math.abs(transactionsAmount
-    .filter(value => value < 0)
-    .reduce((accumulator, value) => accumulator + value, 0))
-    .toFixed(2);
+  const transactionsAmount = transactions.map(({ amount }) => amount);
+  const total = getTotal(transactionsAmount);
+  const income = getIncome(transactionsAmount);
+  const expense = getExpenses(transactionsAmount);
 
   balanceDisplay.textContent = `R$ ${total}`;
   incomeDisplay.textContent = `R$ ${income}`;
@@ -73,7 +76,7 @@ const updateLocalStorage = () => {
   localStorage.setItem('transactions', [JSON.stringify(transactions)]);
 }
 
-const generateID = () => (Math.random()*0xFFFFFF<<0).toString(16);
+const generateID = () => (Math.random() * 0xFFFFFF << 0).toString(16);
 
 const addToTransactionsArray = (transactionName, transactionAmount) => {
   transactions.push({
